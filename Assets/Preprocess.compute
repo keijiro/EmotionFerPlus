@@ -1,0 +1,21 @@
+#pragma kernel Preprocess
+
+#define ImageSize 64
+
+sampler2D _Texture;
+RWBuffer<float> _Tensor;
+
+[numthreads(8, 8, 1)]
+void Preprocess(uint3 id : SV_DispatchThreadID)
+{
+    float2 uv = (id.xy + 0.5) / ImageSize;
+    uv.y = 1 - uv.y;
+
+    float2 dx = float2(1.0 / ImageSize, 0);
+    float2 dy = float2(0, -1.0 / ImageSize);
+
+    float3 rgb = tex2Dgrad(_Texture, uv, dx, dy).rgb;
+    float gs = dot(rgb, float3(0.299, 0.587, 0.114));
+    
+    _Tensor[id.y * 64 + id.x] = gs * 255;
+}
